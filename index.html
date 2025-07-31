@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Plastic Detector</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8"></script>
+  <style>
+    video {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h3>Plastic Detection</h3>
+  <video id="webcam" autoplay muted playsinline></video>
+  <br />
+  <button onclick="predict()">Predict</button>
+  <p id="result">Waiting...</p>
+
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/T7C-BMBxH/";
+    let model, webcam;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      webcam = new tmImage.Webcam(200, 200, true);
+      await webcam.setup();
+      await webcam.play();
+      document.getElementById("webcam").srcObject = webcam.webcam;
+      window.requestAnimationFrame(loop);
+    }
+
+    async function loop() {
+      webcam.update();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+      const top = prediction.reduce((prev, current) =>
+        (prev.probability > current.probability) ? prev : current);
+      document.getElementById("result").innerText =
+        `${top.className} (${(top.probability * 100).toFixed(2)}%)`;
+
+      if (window.AppInventor) {
+        window.AppInventor.setWebViewString(top.className);
+      }
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
