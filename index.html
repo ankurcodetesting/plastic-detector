@@ -23,13 +23,17 @@
   <script type="text/javascript">
     const MODEL_URL = "https://ankurcodetesting.github.io/plastic-detector/model.json";
 
-    let model, maxPredictions;
+    let model;
 
     async function loadModel() {
-      const tm = window.tmImage;
-      model = await tm.load(MODEL_URL, MODEL_URL.replace("model.json", "metadata.json"));
-      maxPredictions = model.getTotalClasses();
-      document.getElementById('label-container').textContent = "Model loaded. Upload an image!";
+      try {
+        const tm = window.tmImage;
+        model = await tm.load(MODEL_URL, MODEL_URL.replace("model.json", "metadata.json"));
+        document.getElementById('label-container').textContent = "Model loaded. Upload an image!";
+      } catch (error) {
+        console.error("Error loading model:", error);
+        document.getElementById('label-container').textContent = "Error loading model. Check console.";
+      }
     }
     loadModel();
 
@@ -39,29 +43,39 @@
 
     upload.addEventListener('change', async (evt) => {
       const file = evt.target.files[0];
-      if (!file || !model) return;
+      if (!file || !model) {
+        labelContainer.textContent = "Model not loaded yet. Please wait.";
+        return;
+      }
 
-      // Preview the uploaded image
       const reader = new FileReader();
       reader.onload = function(e) {
         preview.src = e.target.result;
         preview.style.display = '';
-        predictImage(preview);
+        // Explicitly wait for image load before predicting
+        preview.onload = async function() {
+          await predictImage(preview);
+        };
+        // Trigger load if already complete
+        if (preview.complete) {
+          preview.onload();
+        }
       };
       reader.readAsDataURL(file);
     });
 
     async function predictImage(imgElement) {
       labelContainer.textContent = "Predicting...";
-
-      // Wait for image to load for prediction
-      imgElement.onload = async function () {
+      try {
         const prediction = await model.predict(imgElement);
         let results = prediction
           .map(p => `${p.className}: ${(p.probability * 100).toFixed(1)}%`)
           .join("<br>");
         labelContainer.innerHTML = results;
-      };
+      } catch (error) {
+        console.error("Error during prediction:", error);
+        labelContainer.textContent = "Prediction failed. Check console.";
+      }
     }
   </script>
 </body>
