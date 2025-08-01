@@ -34,7 +34,7 @@
         model = await tm.load(MODEL_URL, MODEL_URL.replace("model.json", "metadata.json"));
         document.getElementById('label-container').textContent = "Model loaded. Upload an image!";
       } catch (error) {
-        console.error("Error loading model:", error);
+        console.error("Error model not working:", error);
         document.getElementById('label-container').textContent = "Error loading model. Check console.";
       }
     }
